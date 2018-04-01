@@ -22,6 +22,8 @@
 //
 //////////////////////////////////////////////////////////////////////
 
+
+
 #if !defined(AFX_GRIDCELL_H__519FA702_722C_11D1_ABBA_00A0243D1382__INCLUDED_)
 #define AFX_GRIDCELL_H__519FA702_722C_11D1_ABBA_00A0243D1382__INCLUDED_
 
@@ -31,6 +33,9 @@
 
 class CGridCtrl;
 #include "GridCellBase.h"
+
+// 체커게임용
+#include "../CheckerGame.h"
 
 // Each cell contains one of these. Fields "row" and "column" are not stored since we
 // will usually have acces to them in other ways, and they are an extra 8 bytes per
@@ -80,6 +85,8 @@ public:
     virtual BOOL        IsDefaultFont() const       { return (m_plfFont == NULL); }
     virtual void        Reset();
 
+	virtual void OnClick(CPoint PointCellRelative);
+
 // editing cells
 public:
     virtual BOOL Edit(int nRow, int nCol, CRect rect, CPoint point, UINT nID, UINT nChar);
@@ -101,6 +108,15 @@ protected:
 
     CGridCtrl* m_pGrid;        // Parent grid control
     CWnd*      m_pEditWnd;
+
+	// 체커게임 전용
+public:
+	//VOID InitCheckersBoard();
+
+protected:
+	VOID RefreshCheckerBoard(CCheckerGame* a_pCheckerGame);
+	VOID ReColorCheckerBoard();
+	VOID ColorAvalialbePath(CCheckerGame* a_pCheckerGame, INT a_nRow, INT a_nCol);
 };
 
 // This class is for storing grid default values. It's a little heavy weight, so

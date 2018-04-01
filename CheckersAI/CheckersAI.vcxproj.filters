@@ -63,6 +63,9 @@
     <ClInclude Include="GridCtrl\TitleTip.h">
       <Filter>Header Files\Grid_Ctrl</Filter>
     </ClInclude>
+    <ClInclude Include="CheckerGame.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CheckersAI.cpp">
@@ -91,6 +94,9 @@
     </ClCompile>
     <ClCompile Include="GridCtrl\TitleTip.cpp">
       <Filter>Source Files\Grid_Ctrl</Filter>
+    </ClCompile>
+    <ClCompile Include="CheckerGame.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

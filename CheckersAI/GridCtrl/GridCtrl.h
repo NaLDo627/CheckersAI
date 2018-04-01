@@ -41,6 +41,7 @@
 
 #include "CellRange.h"
 #include "GridCell.h"
+#include "MyGridCell.h"
 #include <afxtempl.h>
 #include <vector>
 
@@ -198,6 +199,7 @@ typedef bool (*PVIRTUALCOMPARE)(int, int);
 class CGridCtrl : public CWnd
 {
     DECLARE_DYNCREATE(CGridCtrl)
+	friend class CMyGridCell;
     friend class CGridCell;
     friend class CGridCellBase;
 
