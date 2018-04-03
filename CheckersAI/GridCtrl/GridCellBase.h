@@ -30,6 +30,7 @@
 #endif // _MSC_VER >= 1000
 
 class CGridCtrl;
+class CGridEventHandler;
 
 // Cell states
 #define GVIS_FOCUSED            0x0001

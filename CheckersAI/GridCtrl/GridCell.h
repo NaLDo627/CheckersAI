@@ -84,7 +84,6 @@ public:
     virtual BOOL        IsEditing() const           { return m_bEditing; }
     virtual BOOL        IsDefaultFont() const       { return (m_plfFont == NULL); }
     virtual void        Reset();
-
 	virtual void OnClick(CPoint PointCellRelative);
 
 // editing cells
@@ -108,15 +107,6 @@ protected:
 
     CGridCtrl* m_pGrid;        // Parent grid control
     CWnd*      m_pEditWnd;
-
-	// 체커게임 전용
-public:
-	//VOID InitCheckersBoard();
-
-protected:
-	VOID RefreshCheckerBoard(CCheckerGame* a_pCheckerGame);
-	VOID ReColorCheckerBoard();
-	VOID ColorAvalialbePath(CCheckerGame* a_pCheckerGame, INT a_nRow, INT a_nCol);
 };
 
 // This class is for storing grid default values. It's a little heavy weight, so

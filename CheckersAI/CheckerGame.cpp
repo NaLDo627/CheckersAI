@@ -1,12 +1,19 @@
 #include "stdafx.h"
 #include "CheckerGame.h"
+#include "CheckerPlayerAI.h"
+#include "AI\NewAI.hpp"
 
-CCheckerGame::CCheckerGame()
+CCheckerGame::CCheckerGame(BOOL m_bRedAI, BOOL m_bWhiteAI)
 {
 	for(INT c = 0; c < 8; c++)
 		for(INT r = 0; r < 8; r++)
 			m_pCheckerBoard[r][c] = NULL;
-	InitalizeGame();
+	m_pPlayerAI[CHECKER_AI_RED] = NULL;
+	m_pPlayerAI[CHECKER_AI_WHITE] = NULL;
+	m_bPieceTakenOccured = FALSE;
+	m_bBonusTurn = FALSE;
+	
+	InitalizeGame(m_bRedAI, m_bWhiteAI);
 }
 
 CCheckerGame::~CCheckerGame()
@@ -17,9 +24,11 @@ CCheckerGame::~CCheckerGame()
 			if(m_pCheckerBoard[r][c])
 				delete m_pCheckerBoard[r][c];
 		}
+	m_pPlayerAI[CHECKER_AI_RED] = NULL;
+	m_pPlayerAI[CHECKER_AI_WHITE] = NULL;
 }
 
-VOID CCheckerGame::InitalizeGame()
+VOID CCheckerGame::InitalizeGame(BOOL m_bRedAI, BOOL m_bWhiteAI)
 {
 	// Step 1. 모든 요소 초기화
 	for(INT c = 0; c < 8; c++)
@@ -29,6 +38,12 @@ VOID CCheckerGame::InitalizeGame()
 				delete m_pCheckerBoard[r][c];
 			m_pCheckerBoard[r][c] = NULL;
 		}
+	if(m_pPlayerAI[CHECKER_AI_RED])
+		delete m_pPlayerAI[CHECKER_AI_RED];
+	if(m_pPlayerAI[CHECKER_AI_WHITE])
+		delete m_pPlayerAI[CHECKER_AI_WHITE];
+	m_pPlayerAI[CHECKER_AI_RED] = NULL;
+	m_pPlayerAI[CHECKER_AI_WHITE] = NULL;
 
 	// Step 2. 체커 룰대로 말 배치
 	// 빨간팀 배치
@@ -54,9 +69,26 @@ VOID CCheckerGame::InitalizeGame()
 			}
 		}
 
-	// Step 3. 빨간색이 선으로 시작한다.
+	// Step 3. AI 플레이어 초기화
+	if(m_bRedAI)
+	{ 
+		m_pPlayerAI[CHECKER_AI_RED] = new CCheckerPlayerAI(CHECKER_TEAM_RED);
+		m_pPlayerAI[CHECKER_AI_RED]->SetCheckerGame(this);
+	}
+
+	if(m_bWhiteAI)
+	{ 
+		m_pPlayerAI[CHECKER_AI_WHITE] = new CCheckerPlayerAI(CHECKER_TEAM_WHITE);
+		m_pPlayerAI[CHECKER_AI_WHITE]->SetCheckerGame(this);
+	}
+
+	// Step 4. 빨간색이 선으로 시작한다.
 	m_nCurrentTurn = CHECKER_TEAM_RED;
 	m_bPieceTakenOccured = FALSE;
+
+	// AI가 레드일 경우 AI턴 시작
+	if(m_bRedAI)
+		m_pPlayerAI[CHECKER_AI_RED]->MakeMove(); 
 }
 
 BOOL CCheckerGame::MovePiece(CCheckerPiece* a_pCheckerPiece, INT a_nRow, INT a_nCol)
@@ -97,14 +129,15 @@ BOOL CCheckerGame::MovePiece(CCheckerPiece* a_pCheckerPiece, INT a_nRow, INT a_n
 	m_pCheckerBoard[stNextPos.m_nRow][stNextPos.m_nCol] = a_pCheckerPiece;
 	m_pCheckerBoard[stCurPos.m_nRow][stCurPos.m_nCol] = NULL;
 
-	
-
 	// 따먹은 경우 : 추가로 따먹을 수 있는 말이 있는지 검색. 있으면 턴을 바꾸지 않음
 	if(!(m_bPieceTakenOccured && CheckPieceTakenAvailable(stNextPos)))
 	{
 		ChangeTurn();
 		m_bPieceTakenOccured = FALSE;
+		m_bBonusTurn = FALSE;
 	}
+	else
+		m_bBonusTurn = TRUE;
 
 	// 만약 반대쪽 행 끝쪽으로 이동했다면 승격
 	if(stNextPos.m_nRow == 0 || stNextPos.m_nRow == 7)
@@ -133,7 +166,7 @@ INT CCheckerGame::GetGameResult()
 
 	// 둘 다 0이면 뭔가 이상함, 에러 리턴
 	if((nTeamRedCount + nTeamWhiteCount) == 0)
-		return -1;
+		return CHECKER_ERROR;
 
 	if(nTeamRedCount == 0)
 		return CHECKER_TEAM_WHITE;
@@ -145,12 +178,30 @@ INT CCheckerGame::GetGameResult()
 	return 0;
 }
 
+BOOL CCheckerGame::PlayAITurn()
+{
+	BOOL bResult = 0;
+
+	if(!m_pPlayerAI[m_nCurrentTurn - 1])
+		return FALSE;
+
+	do
+	{
+		m_pPlayerAI[m_nCurrentTurn - 1]->MakeMove();
+	} while(m_bBonusTurn);
+
+	return TRUE;
+}
+
+
 VOID CCheckerGame::ChangeTurn()
 {
 	if(m_nCurrentTurn == CHECKER_TEAM_RED)
+	{
 		m_nCurrentTurn = CHECKER_TEAM_WHITE;
-	else
-		m_nCurrentTurn = CHECKER_TEAM_RED;
+		return;
+	}
+	m_nCurrentTurn = CHECKER_TEAM_RED;
 }
 
 BOOL CCheckerGame::CheckValidMovement(ST_PIECE_POS a_stCurPos, ST_PIECE_POS a_stNextPos)
@@ -332,3 +383,4 @@ BOOL CCheckerGame::CheckPieceTakenAvailable(ST_PIECE_POS a_stCurPos)
 
 	return FALSE;
 }
+

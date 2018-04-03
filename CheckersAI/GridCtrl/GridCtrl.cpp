@@ -337,6 +337,12 @@ CGridCtrl::~CGridCtrl()
 #endif
 }
 
+// [PHK][20180403] EventHandler Ãß°¡
+void CGridCtrl::SetEventHandler(CGridEventHandler* a_pEventHandler)
+{
+	m_pEventHandler = a_pEventHandler;
+}
+
 // Register the window class if it has not already been registered.
 BOOL CGridCtrl::RegisterWindowClass()
 {

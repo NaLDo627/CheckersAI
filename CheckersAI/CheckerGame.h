@@ -14,9 +14,16 @@
 #include "stdafx.h"
 #include "resource.h"
 
+#define CHECKER_PLAYER_HUMAN	10
+#define CHECKER_PLAYER_AI		20
+
 #define CHECKER_TEAM_RED		1
 #define CHECKER_TEAM_WHITE		2
 #define CHECKER_GAME_TIE		3
+#define CHECKER_ERROR			(-1)
+
+#define CHECKER_AI_RED			(CHECKER_TEAM_RED-1)
+#define CHECKER_AI_WHITE		(CHECKER_TEAM_WHITE-1)
 
 #define ABS(a)				(((a) >= 0)? (a) : (a) * (-1))
 
@@ -25,6 +32,8 @@ typedef struct _ST_PIECE_POS
 	INT m_nRow;
 	INT m_nCol;
 } ST_PIECE_POS, *PST_PIECE_POS;
+
+class CCheckerPlayerAI;
 
 class CCheckerPiece
 {
@@ -58,20 +67,30 @@ private:
 	ST_PIECE_POS	m_stPos;
 };
 
-
 class CCheckerGame
 {
 public:
-	VOID InitalizeGame();
+	VOID InitalizeGame(BOOL m_bRedAI, BOOL m_bWhiteAI);
 	BOOL MovePiece(CCheckerPiece* a_pCheckerPiece, INT a_nRow, INT a_nCol);
 	INT GetGameResult();
 
+	// AI 전용
+public:
+	BOOL PlayAITurn();
+
+public:
 	/* 헤더에서 구현 */
 	CCheckerPiece* GetPieceByPos(INT a_nRow, INT a_nCol) { return m_pCheckerBoard[a_nRow][a_nCol]; }
 	INT	GetPlayerTurn() { return m_nCurrentTurn; }
+	BOOL IsCurrentPlayerAI()
+	{
+		if(!m_pPlayerAI[m_nCurrentTurn - 1])
+			return FALSE;
+		return TRUE;
+	}
 
 public:
-	CCheckerGame();
+	CCheckerGame(BOOL m_bRedAI, BOOL m_bWhiteAI);
 	virtual ~CCheckerGame();
 	
 private:
@@ -83,5 +102,7 @@ private:
 	CCheckerPiece* m_pCheckerBoard[8][8];
 	INT		m_nCurrentTurn;
 	BOOL	m_bPieceTakenOccured;
+	BOOL	m_bBonusTurn;
 	ST_PIECE_POS	m_stBonusTurnPos;
+	CCheckerPlayerAI* m_pPlayerAI[2];
 };

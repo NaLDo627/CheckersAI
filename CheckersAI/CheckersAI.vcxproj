@@ -93,7 +93,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)GridCtrl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)GridCtrl;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -140,7 +140,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)GridCtrl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)GridCtrl;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -185,6 +185,12 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AI\AI.hpp" />
+    <ClInclude Include="AI\BitBoard.hpp" />
+    <ClInclude Include="AI\Game.hpp" />
+    <ClInclude Include="AI\NewAI.hpp" />
+    <ClInclude Include="AI\Save.hpp" />
+    <ClInclude Include="CheckerPlayerAI.h" />
     <ClInclude Include="CheckersAI.h" />
     <ClInclude Include="CheckersAIDlg.h" />
     <ClInclude Include="GridCtrl\CellRange.h" />
@@ -201,7 +207,13 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AI\AI.cpp" />
+    <ClCompile Include="AI\BitBoard.cpp" />
+    <ClCompile Include="AI\Game.cpp" />
+    <ClCompile Include="AI\NewAI.cpp" />
+    <ClCompile Include="AI\Save.cpp" />
     <ClCompile Include="CheckerGame.cpp" />
+    <ClCompile Include="CheckerPlayerAI.cpp" />
     <ClCompile Include="CheckersAI.cpp" />
     <ClCompile Include="CheckersAIDlg.cpp" />
     <ClCompile Include="GridCtrl\GridCell.cpp" />

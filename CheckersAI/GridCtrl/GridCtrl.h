@@ -42,6 +42,7 @@
 #include "CellRange.h"
 #include "GridCell.h"
 #include "MyGridCell.h"
+#include "CheckersAI.h"
 #include <afxtempl.h>
 #include <vector>
 
@@ -191,6 +192,13 @@ typedef BOOL (CALLBACK* GRIDCALLBACK)(GV_DISPINFO *, LPARAM);
 
 class CGridCtrl;
 
+// [PHK][20180403] EventHandler 추가
+class CGridEventHandler
+{
+public:
+	virtual void OnGridClick(int a_nRow, int a_nCol) = 0;
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // CGridCtrl window
 
@@ -214,6 +222,10 @@ public:
 // Attributes
 ///////////////////////////////////////////////////////////////////////////////////
 public:
+
+	// [PHK][20180403] EventHandler 추가
+	void SetEventHandler(CGridEventHandler* a_pEventHandler);
+	CGridEventHandler* m_pEventHandler;
 
 ///// LUC ///////////////////////////////////////////////////////////////////////
 

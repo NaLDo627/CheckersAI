@@ -22,6 +22,12 @@
     <Filter Include="Source Files\Grid_Ctrl">
       <UniqueIdentifier>{a298859a-af14-4560-b8b1-eb24bb54731c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\AI">
+      <UniqueIdentifier>{1f6d0aea-b8cf-4a1a-9fa3-c3e6b910c8b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\AI">
+      <UniqueIdentifier>{081663e4-1083-43bc-950a-c693481aa121}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CheckersAI.h">
@@ -66,6 +72,24 @@
     <ClInclude Include="CheckerGame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AI\AI.hpp">
+      <Filter>Header Files\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="AI\BitBoard.hpp">
+      <Filter>Header Files\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="AI\Game.hpp">
+      <Filter>Header Files\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="AI\NewAI.hpp">
+      <Filter>Header Files\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="AI\Save.hpp">
+      <Filter>Header Files\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="CheckerPlayerAI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CheckersAI.cpp">
@@ -96,6 +120,24 @@
       <Filter>Source Files\Grid_Ctrl</Filter>
     </ClCompile>
     <ClCompile Include="CheckerGame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\AI.cpp">
+      <Filter>Source Files\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\BitBoard.cpp">
+      <Filter>Source Files\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\Game.cpp">
+      <Filter>Source Files\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\NewAI.cpp">
+      <Filter>Source Files\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\Save.cpp">
+      <Filter>Source Files\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="CheckerPlayerAI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
