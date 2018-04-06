@@ -185,7 +185,6 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AI\AI.hpp" />
     <ClInclude Include="AI\BitBoard.hpp" />
     <ClInclude Include="AI\Game.hpp" />
     <ClInclude Include="AI\NewAI.hpp" />
@@ -207,7 +206,6 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AI\AI.cpp" />
     <ClCompile Include="AI\BitBoard.cpp" />
     <ClCompile Include="AI\Game.cpp" />
     <ClCompile Include="AI\NewAI.cpp" />
@@ -236,6 +234,10 @@
     <None Include="res\CheckersAI.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="res\bitmap1.bmp" />
+    <Image Include="res\bitmap2.bmp" />
+    <Image Include="res\bmp00001.bmp" />
+    <Image Include="res\bmp00002.bmp" />
     <Image Include="res\CheckersAI.ico" />
     <Image Include="res\Toolbar.bmp" />
     <Image Include="res\Toolbar256.bmp" />

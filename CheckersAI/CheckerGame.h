@@ -35,6 +35,15 @@ typedef struct _ST_PIECE_POS
 
 class CCheckerPlayerAI;
 
+class CCheckerEventHandler
+{
+public:
+	virtual void OnPlayerRedTurn() = 0;
+	virtual void OnPlayerWhiteTurn() = 0;
+	virtual void OnPieceMoved(ST_PIECE_POS a_stSrc, ST_PIECE_POS a_stDst) = 0;
+	virtual void OnGameOver(INT a_nGameResult) = 0;
+};
+
 class CCheckerPiece
 {
 public:
@@ -45,8 +54,8 @@ public:
 		m_stPos.m_nCol = a_nCol;
 	}
 	inline VOID SetTeam(INT a_nTeamColor) { m_nTeam = a_nTeamColor; }
-	inline INT GetPosX() { return m_stPos.m_nRow; }
-	inline INT GetPosY() { return m_stPos.m_nCol; }
+	inline INT GetPosRow() { return m_stPos.m_nRow; }
+	inline INT GetPosCol() { return m_stPos.m_nCol; }
 	inline INT GetTeam() { return m_nTeam; }
 	inline BOOL IsPromoted() { return m_bPromoted; }
 	inline ST_PIECE_POS GetPosition() { return m_stPos; }
@@ -72,14 +81,16 @@ class CCheckerGame
 public:
 	VOID InitalizeGame(BOOL m_bRedAI, BOOL m_bWhiteAI);
 	BOOL MovePiece(CCheckerPiece* a_pCheckerPiece, INT a_nRow, INT a_nCol);
-	INT GetGameResult();
+	BOOL CheckValidMovement(ST_PIECE_POS a_stCurPos, ST_PIECE_POS a_stNextPos);
 
 	// AI 전용
 public:
+	VOID SetAIDifficulty(INT a_nTeam, INT a_nDifficulty);
 	BOOL PlayAITurn();
 
 public:
 	/* 헤더에서 구현 */
+	VOID SetEventHandler(CCheckerEventHandler* a_pEventHandler) { m_pEventHandler = a_pEventHandler; }
 	CCheckerPiece* GetPieceByPos(INT a_nRow, INT a_nCol) { return m_pCheckerBoard[a_nRow][a_nCol]; }
 	INT	GetPlayerTurn() { return m_nCurrentTurn; }
 	BOOL IsCurrentPlayerAI()
@@ -94,15 +105,18 @@ public:
 	virtual ~CCheckerGame();
 	
 private:
+	VOID CheckGameResult();
 	VOID ChangeTurn();
-	BOOL CheckValidMovement(ST_PIECE_POS a_stCurPos, ST_PIECE_POS a_stNextPos);
 	BOOL CheckPieceTakenAvailable(ST_PIECE_POS a_stCurPos);
+	BOOL IsMoveable(CCheckerPiece* a_pCheckerPiece);
+	BOOL CheckMustJump(INT a_nTeam);
 
 private:
 	CCheckerPiece* m_pCheckerBoard[8][8];
 	INT		m_nCurrentTurn;
 	BOOL	m_bPieceTakenOccured;
 	BOOL	m_bBonusTurn;
-	ST_PIECE_POS	m_stBonusTurnPos;
+	ST_PIECE_POS	m_stLastMovedPos;
 	CCheckerPlayerAI* m_pPlayerAI[2];
+	CCheckerEventHandler* m_pEventHandler;
 };

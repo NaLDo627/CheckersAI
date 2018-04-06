@@ -8,10 +8,22 @@ class CCheckerGame;
 class Game;
 class NewAI;
 
+typedef struct _ST_THREAD_PARAM
+{
+	BOOL* m_bThreadRunning;
+	UINT m_nDifficluty;
+	CCheckerGame* m_pCheckerGame;
+} ST_THREAD_PARAM, *PST_THREAD_PARAM;
+
 class CCheckerPlayerAI
 {
 public:
-	VOID SetCheckerGame(CCheckerGame* a_pCheckerGame) { m_pCheckerGame = a_pCheckerGame; };
+	VOID SetCheckerGame(CCheckerGame* a_pCheckerGame)
+	{
+		m_pCheckerGame = a_pCheckerGame; 
+		m_stThreadParam.m_pCheckerGame = m_pCheckerGame;
+	}
+	VOID SetCheckerAIDifficulty(UINT a_nDifficulty);
 	BOOL MakeMove();
 
 public:
@@ -19,15 +31,16 @@ public:
 	virtual ~CCheckerPlayerAI();
 
 private:
-	VOID TransformIndexToRowCol(INT a_nIndex, INT* a_nRow, INT* a_nCol);
+	//VOID TransformIndexToRowCol(INT a_nIndex, INT* a_nRow, INT* a_nCol);
+
+private:
+	ST_THREAD_PARAM	m_stThreadParam;
+	CWinThread* m_pThread;
+	BOOL		m_bThreadRunning;
 
 private:
 	CCheckerGame* m_pCheckerGame;
 	INT	m_nTeam;
-
-private:
-	Game* m_pInternalGame;
-	NewAI* m_pInternalAI;
 };
 
 

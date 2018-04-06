@@ -10,9 +10,9 @@ CCheckerGame::CCheckerGame(BOOL m_bRedAI, BOOL m_bWhiteAI)
 			m_pCheckerBoard[r][c] = NULL;
 	m_pPlayerAI[CHECKER_AI_RED] = NULL;
 	m_pPlayerAI[CHECKER_AI_WHITE] = NULL;
-	m_bPieceTakenOccured = FALSE;
 	m_bBonusTurn = FALSE;
-	
+	m_bPieceTakenOccured = FALSE;
+
 	InitalizeGame(m_bRedAI, m_bWhiteAI);
 }
 
@@ -26,6 +26,8 @@ CCheckerGame::~CCheckerGame()
 		}
 	m_pPlayerAI[CHECKER_AI_RED] = NULL;
 	m_pPlayerAI[CHECKER_AI_WHITE] = NULL;
+	m_pEventHandler = NULL;
+	
 }
 
 VOID CCheckerGame::InitalizeGame(BOOL m_bRedAI, BOOL m_bWhiteAI)
@@ -120,14 +122,14 @@ BOOL CCheckerGame::MovePiece(CCheckerPiece* a_pCheckerPiece, INT a_nRow, INT a_n
 			delete m_pCheckerBoard[nMiddleRow][nMiddleCol];
 		m_pCheckerBoard[nMiddleRow][nMiddleCol] = NULL;
 		m_bPieceTakenOccured = TRUE;
-		m_stBonusTurnPos.m_nRow = stNextPos.m_nRow;
-		m_stBonusTurnPos.m_nCol = stNextPos.m_nCol;
 	}
 	
 	// Step 3. 이동한다.
 	a_pCheckerPiece->SetPosition(stNextPos.m_nRow, stNextPos.m_nCol);
 	m_pCheckerBoard[stNextPos.m_nRow][stNextPos.m_nCol] = a_pCheckerPiece;
 	m_pCheckerBoard[stCurPos.m_nRow][stCurPos.m_nCol] = NULL;
+	m_stLastMovedPos.m_nRow = stNextPos.m_nRow;
+	m_stLastMovedPos.m_nCol = stNextPos.m_nCol;
 
 	// 따먹은 경우 : 추가로 따먹을 수 있는 말이 있는지 검색. 있으면 턴을 바꾸지 않음
 	if(!(m_bPieceTakenOccured && CheckPieceTakenAvailable(stNextPos)))
@@ -143,65 +145,20 @@ BOOL CCheckerGame::MovePiece(CCheckerPiece* a_pCheckerPiece, INT a_nRow, INT a_n
 	if(stNextPos.m_nRow == 0 || stNextPos.m_nRow == 7)
 		a_pCheckerPiece->PromoteThis();
 
-	return TRUE;
-}
+	if(m_pEventHandler)
+		m_pEventHandler->OnPieceMoved(stCurPos, stNextPos);
 
-// 비기는 경우도 존재함.. 고려할것
-INT CCheckerGame::GetGameResult()
-{
-	INT nTeamRedCount = 0;
-	INT nTeamWhiteCount = 0;
+	CheckGameResult();
 
-	for(INT c = 0; c < 8; c++)
-		for(INT r = 0; r < 8; r++)
-		{
-			if(m_pCheckerBoard[r][c])
-			{
-				if(m_pCheckerBoard[r][c]->GetTeam() == CHECKER_TEAM_RED)
-					nTeamRedCount++;
-				else
-					nTeamWhiteCount++;
-			}
-		}
-
-	// 둘 다 0이면 뭔가 이상함, 에러 리턴
-	if((nTeamRedCount + nTeamWhiteCount) == 0)
-		return CHECKER_ERROR;
-
-	if(nTeamRedCount == 0)
-		return CHECKER_TEAM_WHITE;
-	else if(nTeamWhiteCount == 0)
-		return CHECKER_TEAM_RED;
-
-	// 비기는 경우 3 리턴 추가
-
-	return 0;
-}
-
-BOOL CCheckerGame::PlayAITurn()
-{
-	BOOL bResult = 0;
-
-	if(!m_pPlayerAI[m_nCurrentTurn - 1])
-		return FALSE;
-
-	do
+	if(m_pEventHandler)
 	{
-		m_pPlayerAI[m_nCurrentTurn - 1]->MakeMove();
-	} while(m_bBonusTurn);
-
-	return TRUE;
-}
-
-
-VOID CCheckerGame::ChangeTurn()
-{
-	if(m_nCurrentTurn == CHECKER_TEAM_RED)
-	{
-		m_nCurrentTurn = CHECKER_TEAM_WHITE;
-		return;
+		if(m_nCurrentTurn == CHECKER_TEAM_RED)
+			m_pEventHandler->OnPlayerRedTurn();
+		else
+			m_pEventHandler->OnPlayerWhiteTurn();
 	}
-	m_nCurrentTurn = CHECKER_TEAM_RED;
+
+	return TRUE;
 }
 
 BOOL CCheckerGame::CheckValidMovement(ST_PIECE_POS a_stCurPos, ST_PIECE_POS a_stNextPos)
@@ -224,13 +181,13 @@ BOOL CCheckerGame::CheckValidMovement(ST_PIECE_POS a_stCurPos, ST_PIECE_POS a_st
 
 	// 팀별로 이동가능한 방향이 다르다. 빨강은 위로, 하양은 아래로 가야한다. 단, 승격이 되었다면 이는 무시한다.
 	nMoveValue = a_stNextPos.m_nRow - a_stCurPos.m_nRow;
-	if((m_nCurrentTurn == CHECKER_TEAM_RED && nMoveValue > 0) 
-		|| (m_nCurrentTurn == CHECKER_TEAM_WHITE && nMoveValue < 0))
-	{ 
+	if((m_pCheckerBoard[a_stCurPos.m_nRow][a_stCurPos.m_nCol]->GetTeam() == CHECKER_TEAM_RED && nMoveValue > 0)
+		|| (m_pCheckerBoard[a_stCurPos.m_nRow][a_stCurPos.m_nCol]->GetTeam() == CHECKER_TEAM_WHITE && nMoveValue < 0))
+	{
 		if(!m_pCheckerBoard[a_stCurPos.m_nRow][a_stCurPos.m_nCol]->IsPromoted())
 			return FALSE;
 	}
-	
+
 	// Step 2. 이동가능 범위 체크
 	// 참고 : 이동범위는 열 이동을 기준으로 체크한다. (행 기준도 상관없음)
 	nMoveValue = a_stNextPos.m_nCol - a_stCurPos.m_nCol;
@@ -239,17 +196,14 @@ BOOL CCheckerGame::CheckValidMovement(ST_PIECE_POS a_stCurPos, ST_PIECE_POS a_st
 	if(m_bPieceTakenOccured)
 	{
 		// 추가 턴을 얻은 셀이 아니라면 실패
-		if(a_stCurPos.m_nRow != m_stBonusTurnPos.m_nRow ||
-			a_stCurPos.m_nCol != m_stBonusTurnPos.m_nCol)
+		if(a_stCurPos.m_nRow != m_stLastMovedPos.m_nRow ||
+			a_stCurPos.m_nCol != m_stLastMovedPos.m_nCol)
 			return FALSE;
 
 		// 따먹을 수 있는 경로로만 가야함. 즉 두 칸이 아니면 실패
 		if(ABS(nMoveValue) != 2)
 			return FALSE;
 	}
-
-	// 따먹기가 발생했다면 해당 셀만 이동가능
-	
 
 	// 3칸 이상 갈 수 없음
 	if(ABS(nMoveValue) > 2)
@@ -272,10 +226,13 @@ BOOL CCheckerGame::CheckValidMovement(ST_PIECE_POS a_stCurPos, ST_PIECE_POS a_st
 
 		return TRUE;
 	}
-
 	// 1칸 - 도착지는 비어있어야함
+	// 추가 -> 만약 잡아먹을수 있는 말이 있다면 불가
 	if(ABS(nMoveValue) == 1)
 	{
+		if(CheckMustJump(m_pCheckerBoard[a_stCurPos.m_nRow][a_stCurPos.m_nCol]->GetTeam()))
+			return FALSE;
+
 		if(m_pCheckerBoard[a_stNextPos.m_nRow][a_stNextPos.m_nCol] != NULL)
 			return FALSE;
 
@@ -286,101 +243,288 @@ BOOL CCheckerGame::CheckValidMovement(ST_PIECE_POS a_stCurPos, ST_PIECE_POS a_st
 	return FALSE;
 }
 
-BOOL CCheckerGame::CheckPieceTakenAvailable(ST_PIECE_POS a_stCurPos)
+VOID CCheckerGame::CheckGameResult()
 {
-	INT nCurrentRow = a_stCurPos.m_nRow;
-	INT nCurrentCol = a_stCurPos.m_nCol;
-	CCheckerPiece* pCurPiece = m_pCheckerBoard[nCurrentRow][nCurrentCol];
+	INT nGameResult = 0;
+	INT nTeamRedCount = 0;
+	INT nTeamWhiteCount = 0;
+	BOOL bRedMoveable = FALSE;
+	BOOL bWhiteMoveable = FALSE;
 
-	// 빨강일때 : 대각선 위쪽으로 적 말, 그 반대쪽에 말이 없다면 따먹기 가능
+	for(INT c = 0; c < 8; c++)
+		for(INT r = 0; r < 8; r++)
+		{
+			if(!m_pCheckerBoard[r][c])
+				continue;
+
+			if(m_pCheckerBoard[r][c]->GetTeam() == CHECKER_TEAM_RED)
+			{
+				nTeamRedCount++;
+				if(IsMoveable(m_pCheckerBoard[r][c]))
+					bRedMoveable = TRUE;
+				continue;
+			}
+
+			nTeamWhiteCount++;
+			if(IsMoveable(m_pCheckerBoard[r][c]))
+				bWhiteMoveable = TRUE;
+		}
+
+	// 둘 다 0이면 뭔가 이상함, 에러 리턴
+	if((nTeamRedCount + nTeamWhiteCount) == 0)
+	{
+		if(m_pEventHandler)
+			m_pEventHandler->OnGameOver(CHECKER_ERROR);
+	}
+
+	// 둘다 움직일 수 없다면 비김
+	if(!bRedMoveable && !bWhiteMoveable)
+		nGameResult = CHECKER_GAME_TIE;
+
+	// 빨강이 없거나, 빨강이 움직일 수 없고 빨강 턴이라면 하양 승
+	else if((nTeamRedCount == 0) || (!bRedMoveable && m_nCurrentTurn == CHECKER_TEAM_RED))
+		nGameResult = CHECKER_TEAM_WHITE;
+
+	// 하양이 없거나, 하양이 움직일 수 없고 하양 턴이라면 빨강승
+	else if((nTeamWhiteCount == 0) || (!bWhiteMoveable && m_nCurrentTurn == CHECKER_TEAM_WHITE))
+		nGameResult = CHECKER_TEAM_RED;
+
+	if(nGameResult != 0 && m_pEventHandler)
+		m_pEventHandler->OnGameOver(nGameResult);
+}
+
+VOID CCheckerGame::SetAIDifficulty(INT a_nTeam, INT a_nDifficulty)
+{
+	if(!m_pPlayerAI[a_nTeam - 1])
+		return;
+
+	m_pPlayerAI[a_nTeam - 1]->SetCheckerAIDifficulty((UINT)a_nDifficulty);
+}
+
+BOOL CCheckerGame::PlayAITurn()
+{
+	if(!m_pPlayerAI[m_nCurrentTurn - 1])
+		return FALSE;
+
+	if(!(m_pPlayerAI[m_nCurrentTurn - 1]->MakeMove()))
+		return FALSE;
+
+	return TRUE;
+}
+
+
+VOID CCheckerGame::ChangeTurn()
+{
 	if(m_nCurrentTurn == CHECKER_TEAM_RED)
 	{
-		// 왼위 쪽으로 가능한지 검사
-		if(nCurrentRow > 1 && nCurrentCol > 1)
-		{
-			if(m_pCheckerBoard[nCurrentRow - 1][nCurrentCol - 1] != NULL &&		// 대각선 왼쪽 위로 말이 있고
-				(m_pCheckerBoard[nCurrentRow - 1][nCurrentCol - 1]->GetTeam() != m_nCurrentTurn) && // 그 말의 팀이 같은편이 아니고
-				m_pCheckerBoard[nCurrentRow - 2][nCurrentCol - 2] == NULL)		// 그 너머로 말이 없을때
-				return TRUE;
-		}
-
-		// 오른위 쪽으로 가능한지 검사
-		if(nCurrentRow > 1 && nCurrentCol < 6)
-		{
-			if(m_pCheckerBoard[nCurrentRow - 1][nCurrentCol + 1] != NULL &&		// 대각선 오른쪽 위로 말이 있고
-				(m_pCheckerBoard[nCurrentRow - 1][nCurrentCol + 1]->GetTeam() != m_nCurrentTurn) && // 그 말의 팀이 같은편이 아니고
-				m_pCheckerBoard[nCurrentRow - 2][nCurrentCol + 2] == NULL)		// 그 너머로 말이 없을때
-				return TRUE;
-		}
-
-		// 승격되지 않은 상태라면 리턴
-		if(!pCurPiece->IsPromoted())
-			return FALSE;
-
-		// 승격된 상태라면 대각선 아래쪽도 검사한다.
-		// 왼아래 쪽으로 가능한지 검사
-		if(nCurrentRow < 6 && nCurrentCol > 1)
-		{
-			if(m_pCheckerBoard[nCurrentRow + 1][nCurrentCol - 1] != NULL &&		// 대각선 왼쪽 아래로 말이 있고
-				(m_pCheckerBoard[nCurrentRow + 1][nCurrentCol - 1]->GetTeam() != m_nCurrentTurn) && // 그 말의 팀이 같은편이 아니고
-				m_pCheckerBoard[nCurrentRow + 2][nCurrentCol - 2] == NULL)		// 그 너머로 말이 없을때
-				return TRUE;
-		}
-
-		// 오른아래 쪽으로 가능한지 검사
-		if(nCurrentRow < 6 && nCurrentCol < 6)
-		{
-			if(m_pCheckerBoard[nCurrentRow + 1][nCurrentCol + 1] != NULL &&		// 대각선 오른쪽 아래로 말이 있고
-				(m_pCheckerBoard[nCurrentRow + 1][nCurrentCol + 1]->GetTeam() != m_nCurrentTurn) && // 그 말의 팀이 같은편이 아니고
-				m_pCheckerBoard[nCurrentRow + 2][nCurrentCol + 2] == NULL)		// 그 너머로 말이 없을때
-				return TRUE;
-		}
+		m_nCurrentTurn = CHECKER_TEAM_WHITE;
+		return;
 	}
-	// 하양일때는 반대
-	else
+	m_nCurrentTurn = CHECKER_TEAM_RED;
+}
+
+BOOL CCheckerGame::CheckPieceTakenAvailable(ST_PIECE_POS a_stCurPos)
+{
+	ST_PIECE_POS stCurPos = a_stCurPos;
+	ST_PIECE_POS stNextPos = {0, };
+	CCheckerPiece* pCurPiece = m_pCheckerBoard[stCurPos.m_nRow][stCurPos.m_nCol];
+
+	if(m_nCurrentTurn == CHECKER_TEAM_RED)
 	{
-		// 왼아래 쪽으로 가능한지 검사
-		if(nCurrentRow < 6 && nCurrentCol > 1)
-		{
-			if(m_pCheckerBoard[nCurrentRow + 1][nCurrentCol - 1] != NULL &&		// 대각선 왼쪽 아래로 말이 있고
-				(m_pCheckerBoard[nCurrentRow + 1][nCurrentCol - 1]->GetTeam() != m_nCurrentTurn) && // 그 말의 팀이 같은편이 아니고
-				m_pCheckerBoard[nCurrentRow + 2][nCurrentCol - 2] == NULL)		// 그 너머로 말이 없을때
-				return TRUE;
-		}
+		// 왼쪽 위로 이동 가능한지 검사
+		stNextPos.m_nRow = stCurPos.m_nRow - 2;
+		stNextPos.m_nCol = stCurPos.m_nCol - 2;
+		if(CheckValidMovement(stCurPos, stNextPos))
+			return TRUE;
 
-		// 오른아래 쪽으로 가능한지 검사
-		if(nCurrentRow < 6 && nCurrentCol < 6)
-		{
-			if(m_pCheckerBoard[nCurrentRow + 1][nCurrentCol + 1] != NULL &&		// 대각선 오른쪽 아래로 말이 있고
-				(m_pCheckerBoard[nCurrentRow + 1][nCurrentCol + 1]->GetTeam() != m_nCurrentTurn) && // 그 말의 팀이 같은편이 아니고
-				m_pCheckerBoard[nCurrentRow + 2][nCurrentCol + 2] == NULL)		// 그 너머로 말이 없을때
-				return TRUE;
-		}
+		// 오른쪽 위로 이동 가능한지 검사
+		stNextPos.m_nRow = stCurPos.m_nRow - 2;
+		stNextPos.m_nCol = stCurPos.m_nCol + 2;
+		if(CheckValidMovement(stCurPos, stNextPos))
+			return TRUE;
 
-		// 승격되지 않은 상태라면 리턴
+		// 승격되지 않았다면 리턴
 		if(!pCurPiece->IsPromoted())
 			return FALSE;
 
-		// 승격된 상태라면 대각선 아래쪽도 검사한다.
-		// 왼위 쪽으로 가능한지 검사
-		if(nCurrentRow > 1 && nCurrentCol > 1)
-		{
-			if(m_pCheckerBoard[nCurrentRow - 1][nCurrentCol - 1] != NULL &&		// 대각선 왼쪽 위로 말이 있고
-				(m_pCheckerBoard[nCurrentRow - 1][nCurrentCol - 1]->GetTeam() != m_nCurrentTurn) && // 그 말의 팀이 같은편이 아니고
-				m_pCheckerBoard[nCurrentRow - 2][nCurrentCol - 2] == NULL)		// 그 너머로 말이 없을때
-				return TRUE;
-		}
+		// 왼쪽 아래로 이동 가능한지 검사
+		stNextPos.m_nRow = stCurPos.m_nRow + 2;
+		stNextPos.m_nCol = stCurPos.m_nCol - 2;
+		if(CheckValidMovement(stCurPos, stNextPos))
+			return TRUE;
 
-		// 오른위 쪽으로 가능한지 검사
-		if(nCurrentRow > 1 && nCurrentCol < 6)
-		{
-			if(m_pCheckerBoard[nCurrentRow - 1][nCurrentCol + 1] != NULL &&		// 대각선 오른쪽 위로 말이 있고
-				(m_pCheckerBoard[nCurrentRow - 1][nCurrentCol + 1]->GetTeam() != m_nCurrentTurn) && // 그 말의 팀이 같은편이 아니고
-				m_pCheckerBoard[nCurrentRow - 2][nCurrentCol + 2] == NULL)		// 그 너머로 말이 없을때
-				return TRUE;
-		}
+		// 오른쪽 아래로 이동 가능한지 검사
+		stNextPos.m_nRow = stCurPos.m_nRow + 2;
+		stNextPos.m_nCol = stCurPos.m_nCol + 2;
+		if(CheckValidMovement(stCurPos, stNextPos))
+			return TRUE;
+
+		return FALSE;
 	}
+
+	// 왼쪽 아래로 이동 가능한지 검사
+	stNextPos.m_nRow = stCurPos.m_nRow + 2;
+	stNextPos.m_nCol = stCurPos.m_nCol - 2;
+	if(CheckValidMovement(stCurPos, stNextPos))
+		return TRUE;
+
+	// 오른쪽 아래로 이동 가능한지 검사
+	stNextPos.m_nRow = stCurPos.m_nRow + 2;
+	stNextPos.m_nCol = stCurPos.m_nCol + 2;
+	if(CheckValidMovement(stCurPos, stNextPos))
+		return TRUE;
+
+	// 승격되지 않았다면 리턴
+	if(!pCurPiece->IsPromoted())
+		return FALSE;
+
+	// 왼쪽 위로 이동 가능한지 검사
+	stNextPos.m_nRow = stCurPos.m_nRow - 2;
+	stNextPos.m_nCol = stCurPos.m_nCol - 2;
+	if(CheckValidMovement(stCurPos, stNextPos))
+		return TRUE;
+
+	// 오른쪽 위로 이동 가능한지 검사
+	stNextPos.m_nRow = stCurPos.m_nRow - 2;
+	stNextPos.m_nCol = stCurPos.m_nCol + 2;
+	if(CheckValidMovement(stCurPos, stNextPos))
+		return TRUE;
 
 	return FALSE;
 }
 
+BOOL CCheckerGame::IsMoveable(CCheckerPiece* a_pCheckerPiece)
+{
+	ST_PIECE_POS stCurPos = {0,};
+	ST_PIECE_POS stNextPos = { 0, };
+
+	if(!a_pCheckerPiece)
+		return FALSE;
+
+	stCurPos = a_pCheckerPiece->GetPosition();
+
+	if(a_pCheckerPiece->GetTeam() == CHECKER_TEAM_RED)
+	{
+		// 왼쪽 위로 이동 가능한지 검사
+		stNextPos.m_nRow = stCurPos.m_nRow - 1;
+		stNextPos.m_nCol = stCurPos.m_nCol - 1;
+		if(CheckValidMovement(stCurPos, stNextPos))
+			return TRUE;
+
+		stNextPos.m_nRow = stCurPos.m_nRow - 2;
+		stNextPos.m_nCol = stCurPos.m_nCol - 2;
+		if(CheckValidMovement(stCurPos, stNextPos))
+			return TRUE;
+
+		// 오른쪽 위로 이동 가능한지 검사
+		stNextPos.m_nRow = stCurPos.m_nRow - 1;
+		stNextPos.m_nCol = stCurPos.m_nCol + 1;
+		if(CheckValidMovement(stCurPos, stNextPos))
+			return TRUE;
+
+		stNextPos.m_nRow = stCurPos.m_nRow - 2;
+		stNextPos.m_nCol = stCurPos.m_nCol + 2;
+		if(CheckValidMovement(stCurPos, stNextPos))
+			return TRUE;
+
+		// 승격되지 않았다면 리턴
+		if(!a_pCheckerPiece->IsPromoted())
+			return FALSE;
+
+		// 왼쪽 아래로 이동 가능한지 검사
+		stNextPos.m_nRow = stCurPos.m_nRow + 1;
+		stNextPos.m_nCol = stCurPos.m_nCol - 1;
+		if(CheckValidMovement(stCurPos, stNextPos))
+			return TRUE;
+
+		stNextPos.m_nRow = stCurPos.m_nRow + 2;
+		stNextPos.m_nCol = stCurPos.m_nCol - 2;
+		if(CheckValidMovement(stCurPos, stNextPos))
+			return TRUE;
+
+		// 오른쪽 아래로 이동 가능한지 검사
+		stNextPos.m_nRow = stCurPos.m_nRow + 1;
+		stNextPos.m_nCol = stCurPos.m_nCol + 1;
+		if(CheckValidMovement(stCurPos, stNextPos))
+			return TRUE;
+
+		stNextPos.m_nRow = stCurPos.m_nRow + 2;
+		stNextPos.m_nCol = stCurPos.m_nCol + 2;
+		if(CheckValidMovement(stCurPos, stNextPos))
+			return TRUE;
+
+		return FALSE;
+	}
+
+	// 왼쪽 아래로 이동 가능한지 검사
+	stNextPos.m_nRow = stCurPos.m_nRow + 1;
+	stNextPos.m_nCol = stCurPos.m_nCol - 1;
+	if(CheckValidMovement(stCurPos, stNextPos))
+		return TRUE;
+
+	stNextPos.m_nRow = stCurPos.m_nRow + 2;
+	stNextPos.m_nCol = stCurPos.m_nCol - 2;
+	if(CheckValidMovement(stCurPos, stNextPos))
+		return TRUE;
+
+	// 오른쪽 아래로 이동 가능한지 검사
+	stNextPos.m_nRow = stCurPos.m_nRow + 1;
+	stNextPos.m_nCol = stCurPos.m_nCol + 1;
+	if(CheckValidMovement(stCurPos, stNextPos))
+		return TRUE;
+
+	stNextPos.m_nRow = stCurPos.m_nRow + 2;
+	stNextPos.m_nCol = stCurPos.m_nCol + 2;
+	if(CheckValidMovement(stCurPos, stNextPos))
+		return TRUE;
+
+	// 승격되지 않았다면 리턴
+	if(!a_pCheckerPiece->IsPromoted())
+		return FALSE;
+
+	// 왼쪽 위로 이동 가능한지 검사
+	stNextPos.m_nRow = stCurPos.m_nRow - 1;
+	stNextPos.m_nCol = stCurPos.m_nCol - 1;
+	if(CheckValidMovement(stCurPos, stNextPos))
+		return TRUE;
+
+	stNextPos.m_nRow = stCurPos.m_nRow - 2;
+	stNextPos.m_nCol = stCurPos.m_nCol - 2;
+	if(CheckValidMovement(stCurPos, stNextPos))
+		return TRUE;
+
+	// 오른쪽 위로 이동 가능한지 검사
+	stNextPos.m_nRow = stCurPos.m_nRow - 1;
+	stNextPos.m_nCol = stCurPos.m_nCol + 1;
+	if(CheckValidMovement(stCurPos, stNextPos))
+		return TRUE;
+
+	stNextPos.m_nRow = stCurPos.m_nRow - 2;
+	stNextPos.m_nCol = stCurPos.m_nCol + 2;
+	if(CheckValidMovement(stCurPos, stNextPos))
+		return TRUE;
+
+	return FALSE;
+}
+
+BOOL CCheckerGame::CheckMustJump(INT a_nTeam)
+{
+	ST_PIECE_POS stCurPos = {0 ,};
+
+	for(INT c = 0; c < 8; c++)
+		for(INT r = 0; r < 8; r++)
+		{
+			if(!m_pCheckerBoard[r][c])
+				continue;
+
+			if(m_pCheckerBoard[r][c]->GetTeam() != a_nTeam)
+				continue;
+
+			stCurPos.m_nRow = r;
+			stCurPos.m_nCol = c;
+
+			if(CheckPieceTakenAvailable(stCurPos))
+				return TRUE;
+		}
+	return FALSE;
+}

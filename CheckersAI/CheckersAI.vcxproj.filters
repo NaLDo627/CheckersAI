@@ -72,9 +72,6 @@
     <ClInclude Include="CheckerGame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AI\AI.hpp">
-      <Filter>Header Files\AI</Filter>
-    </ClInclude>
     <ClInclude Include="AI\BitBoard.hpp">
       <Filter>Header Files\AI</Filter>
     </ClInclude>
@@ -122,9 +119,6 @@
     <ClCompile Include="CheckerGame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AI\AI.cpp">
-      <Filter>Source Files\AI</Filter>
-    </ClCompile>
     <ClCompile Include="AI\BitBoard.cpp">
       <Filter>Source Files\AI</Filter>
     </ClCompile>
@@ -159,6 +153,18 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="res\Toolbar256.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\bmp00001.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\bitmap2.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\bmp00002.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
