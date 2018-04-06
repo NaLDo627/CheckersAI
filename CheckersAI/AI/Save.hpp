@@ -34,10 +34,10 @@ struct Save {
 	void write(std::string) const;
 	void read(std::string);
 
-	int grade()
+	inline int grade()
 	{
-		int p1 = Bit::bitCount(BP & ~K) + 0*2 * Bit::bitCount(BP & K);
-		int p2 = Bit::bitCount(WP & ~K) + 0*2 * Bit::bitCount(WP & K);
+		int p1 = Bit::bitCount(BP & ~K) + 2 * Bit::bitCount(BP & K);
+		int p2 = Bit::bitCount(WP & ~K) + 2 * Bit::bitCount(WP & K);
 		p2 *= -1;
 
 		return p1 + p2;

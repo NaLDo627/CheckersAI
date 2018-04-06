@@ -25,6 +25,9 @@ NewAI::NewAI(const unsigned char difficulty) :
 NewAI::~NewAI()
 {
 	// TODO Auto-generated destructor stub
+	_difficulty = 0;
+	_root.branches.clear();
+	Sleep(100);
 }
 
 void NewAI::initialize(const Save& s)
@@ -40,6 +43,7 @@ Move NewAI::evaluate_game(Game& g)
 	initialize(old_save);
 
 	//int alpha = std::numeric_limits<int>::min();
+	// 가능한한 최솟값과 최댓값 대입
 	int alpha = INT_MIN;
 	int beta = INT_MAX;
 
@@ -47,11 +51,10 @@ Move NewAI::evaluate_game(Game& g)
 
 	if (_root.branches.empty()) return {0,0,false};
 
-	Move best_move;
 	int idx = 0;
 	if (g.mTurn) {
 		int max = alpha;
-		for (int i = 0; i < _root.branches.size(); i++) {
+		for (unsigned int i = 0; i < _root.branches.size(); i++) {
 			if (_root.branches[i]->val > max) {
 				max = _root.branches[i]->val;
 				idx = i;
@@ -60,7 +63,7 @@ Move NewAI::evaluate_game(Game& g)
 		}
 	} else {
 		int min = beta;
-		for (int i = 0; i < _root.branches.size(); i++) {
+		for (unsigned int i = 0; i < _root.branches.size(); i++) {
 			if (_root.branches[i]->val < min) {
 				min = _root.branches[i]->val;
 				idx = i;
@@ -69,6 +72,7 @@ Move NewAI::evaluate_game(Game& g)
 		}
 	}
 
+	// 가장 최선의 움직임을 리턴한다.
 	return _root.branches[idx]->move;
 
 }
@@ -78,23 +82,33 @@ int NewAI::alphabeta(Node& node, int alpha, int beta, bool player)
 	using std::max;
 	using std::min;
 
-	if (!s_game.getJumpers() && !s_game.getMovers()) {
-		if (node.depth == 0) std::cerr << "NO MOVES: FIRST CHECK.\n";
+	if(node.depth >= _difficulty)
 		return node.save.grade();
+
+	if (!s_game.getJumpers() && !s_game.getMovers())
+		return node.save.grade();
+
+	//gen_outcomes(node);
+
+	// 가능한 가짓수를 생성한다.
+	if(s_game.mTurn)
+		gen_jumps_red(node);
+	else
+		gen_jumps_white(node);
+	if(node.branches.empty())
+	{
+		if(s_game.mTurn)
+			gen_moves_red(node);
+		else
+			gen_moves_white(node);
 	}
 
-//	if (node.depth == 0)
-//		return node.save.grade();
-	if (node.depth >= _difficulty) {
-//		std::cerr << "TOO DEEP!!.!!" << (int)node.depth << " " << (int)_difficulty << std::endl;
-		return node.save.grade();
-	}
-
-	gen_outcomes(node);
+	// 플레이어에 따라 알파-베타 가지치기로 최대값 혹은 최소값을 뽑아낸다.
 	if (player) {
 		for (auto & child : node.branches) {
 			alpha = max(alpha, alphabeta(*(child), alpha, beta, !player));
-//			Node nd = *child;
+
+			// 가지치기
 			if (beta <= alpha)
 				break;
 		}
@@ -103,7 +117,8 @@ int NewAI::alphabeta(Node& node, int alpha, int beta, bool player)
 	} else {
 		for (auto & child : node.branches) {
 			beta = min(beta, alphabeta(*(child), alpha, beta, !player));
-			//			Node nd = *child;
+
+			// 가지치기
 			if (beta <= alpha)
 				break;
 		}
@@ -120,7 +135,7 @@ void NewAI::gen_outcomes(Node& n)
 		gen_moves(n);
 }
 
-void NewAI::gen_moves_black(Node& n)
+void NewAI::gen_moves_red(Node& n)
 {
 //	using namespace std;
 	using namespace Bit::Masks;
@@ -186,7 +201,7 @@ void NewAI::gen_moves_white(Node& n)
 	}
 }
 
-void NewAI::gen_jumps_black(Node& n)
+void NewAI::gen_jumps_red(Node& n)
 {
 	using namespace std;
 	using Bit::Masks::bbUMap;
@@ -281,12 +296,4 @@ void Node::move_and_restore(const Move& m)
 			std::unique_ptr<Node>(
 					new Node(NewAI::s_game.getSave(), m, depth + 1)));
 	NewAI::s_game.restoreToSave(save);
-}
-
-void Node::print()
-{
-	using namespace std;
-
-	cout << "This is a degree " << (int)depth << " Node with Value: " << val << "."
-			<< endl;
 }

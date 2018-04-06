@@ -95,89 +95,11 @@ std::vector<Cell> Game::toArr() const
 	return b;
 }
 
-void Game::print() const
-{
-	using std::cout;
-	using std::endl;
+//inline BitBoard Game::getJumpers() const
 
-	if (mTurn)
-		cout << "Player 1's turn.\n";
-	else
-		cout << "Player 2's turn.\n";
-	cout << "P1: " << Bit::bitCount(mBP) << "\tP2: " << Bit::bitCount(mWP)
-			<< endl;
 
-	std::vector<Cell> b = toArr();
+//inline BitBoard Game::getMovers() const
 
-	for (int j = 7; j >= 0; j--) {
-		for (int i = 0; i < 8; i++)
-			cout << cellTable[b[i + 8 * j]];
-		cout << endl;
-	}
-
-}
-
-BitBoard Game::getJumpers() const
-{
-	using namespace Bit::Masks;
-	using Bit::ror;
-	using Bit::rol;
-
-	BitBoard empty = ~(mWP | mBP);
-	BitBoard Temp;
-	BitBoard jumpers = 0;
-	if (mTurn) {
-		BitBoard BK = mBP & mK;
-		Temp = ror(empty, 7) & mWP & CAN_UPLEFT;
-		jumpers |= ror(Temp, 7) & mBP & CAN_UPLEFT;
-		Temp = ror(empty, 1) & mWP & CAN_UPRIGHT;
-		jumpers |= ror(Temp, 1) & mBP & CAN_UPRIGHT;
-
-		Temp = rol(empty, 7) & mWP & CAN_DOWNRIGHT;
-		jumpers |= rol(Temp, 7) & BK & CAN_DOWNRIGHT;
-		Temp = rol(empty, 1) & mWP & CAN_DOWNLEFT;
-		jumpers |= rol(Temp, 1) & BK & CAN_DOWNLEFT;
-	} else {
-		BitBoard WK = mWP & mK;
-		Temp = rol(empty, 7) & mBP & CAN_DOWNRIGHT;
-		jumpers |= rol(Temp, 7) & mWP & CAN_DOWNRIGHT;
-		Temp = rol(empty, 1) & mBP & CAN_DOWNLEFT;
-		jumpers |= rol(Temp, 1) & mWP & CAN_DOWNLEFT;
-
-		Temp = ror(empty, 7) & mBP & CAN_UPLEFT;
-		jumpers |= ror(Temp, 7) & WK & CAN_UPLEFT;
-		Temp = ror(empty, 1) & mBP & CAN_UPRIGHT;
-		jumpers |= ror(Temp, 1) & WK & CAN_UPRIGHT;
-	}
-
-	return jumpers;
-}
-
-BitBoard Game::getMovers() const
-{
-	using namespace Bit::Masks;
-	using Bit::ror;
-	using Bit::rol;
-
-	const BB empty = ~(mWP | mBP);
-	BB Movers;
-
-	if (mTurn) {
-		const BB BK = mBP & mK;
-		Movers = ror(empty, 7) & mBP & CAN_UPLEFT;
-		Movers |= ror(empty, 1) & mBP & CAN_UPRIGHT;
-		Movers |= rol(empty, 7) & BK & CAN_DOWNRIGHT;
-		Movers |= rol(empty, 1) & BK & CAN_DOWNLEFT;
-	} else {
-		const BB WK = mWP & mK; // Kings
-		Movers = rol(empty, 7) & mWP & CAN_DOWNRIGHT;
-		Movers |= rol(empty, 1) & mWP & CAN_DOWNLEFT;
-		Movers |= ror(empty, 7) & WK & CAN_UPLEFT;
-		Movers |= ror(empty, 1) & WK & CAN_UPRIGHT;
-	}
-
-	return Movers;
-}
 
 /* Piece movement */
 MoveCode Game::makeMove(const Move& move)
