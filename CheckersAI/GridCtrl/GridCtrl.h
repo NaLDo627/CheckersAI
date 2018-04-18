@@ -41,7 +41,7 @@
 
 #include "CellRange.h"
 #include "GridCell.h"
-#include "MyGridCell.h"
+//#include "MyGridCell.h"
 #include "CheckersAI.h"
 #include <afxtempl.h>
 #include <vector>

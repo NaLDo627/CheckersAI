@@ -114,8 +114,9 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -165,8 +166,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -185,10 +187,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AI\BitBoard.hpp" />
-    <ClInclude Include="AI\Game.hpp" />
-    <ClInclude Include="AI\NewAI.hpp" />
-    <ClInclude Include="AI\Save.hpp" />
+    <ClInclude Include="CheckerGameBase.h" />
     <ClInclude Include="CheckerPlayerAI.h" />
     <ClInclude Include="CheckersAI.h" />
     <ClInclude Include="CheckersAIDlg.h" />
@@ -206,11 +205,8 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AI\BitBoard.cpp" />
-    <ClCompile Include="AI\Game.cpp" />
-    <ClCompile Include="AI\NewAI.cpp" />
-    <ClCompile Include="AI\Save.cpp" />
     <ClCompile Include="CheckerGame.cpp" />
+    <ClCompile Include="CheckerGameBase.cpp" />
     <ClCompile Include="CheckerPlayerAI.cpp" />
     <ClCompile Include="CheckersAI.cpp" />
     <ClCompile Include="CheckersAIDlg.cpp" />

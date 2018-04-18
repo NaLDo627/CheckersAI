@@ -13,6 +13,8 @@
 
 #include "stdafx.h"
 #include "resource.h"
+#include "CheckerGameBase.h"
+#include <vector>
 
 #define CHECKER_PLAYER_HUMAN	10
 #define CHECKER_PLAYER_AI		20
@@ -27,11 +29,7 @@
 
 #define ABS(a)				(((a) >= 0)? (a) : (a) * (-1))
 
-typedef struct _ST_PIECE_POS
-{
-	INT m_nRow;
-	INT m_nCol;
-} ST_PIECE_POS, *PST_PIECE_POS;
+static CMutex s_AppMutex;
 
 class CCheckerPlayerAI;
 
@@ -44,44 +42,21 @@ public:
 	virtual void OnGameOver(INT a_nGameResult) = 0;
 };
 
-class CCheckerPiece
+class CCheckerGame : public CCheckerGameBase
 {
 public:
-	inline VOID PromoteThis() { m_bPromoted = TRUE; }
-	inline VOID SetPosition(INT a_nRow, INT a_nCol)
-	{
-		m_stPos.m_nRow = a_nRow;
-		m_stPos.m_nCol = a_nCol;
-	}
-	inline VOID SetTeam(INT a_nTeamColor) { m_nTeam = a_nTeamColor; }
-	inline INT GetPosRow() { return m_stPos.m_nRow; }
-	inline INT GetPosCol() { return m_stPos.m_nCol; }
-	inline INT GetTeam() { return m_nTeam; }
-	inline BOOL IsPromoted() { return m_bPromoted; }
-	inline ST_PIECE_POS GetPosition() { return m_stPos; }
+	friend class CCheckerPlayerAI;
 
+	virtual VOID InitalizeGame(BOOL m_bRedAI, BOOL m_bWhiteAI);
+	virtual BOOL MovePiece(ST_PIECE_POS a_stCurPos, ST_PIECE_POS a_stNextPos);
+	//virtual BOOL MovePiece(ST_MOVE_POS a_stMovePos);
+	virtual BOOL CheckValidMovement(ST_PIECE_POS a_stCurPos, ST_PIECE_POS a_stNextPos);
+
+	// Dlg 에서 요구
 public:
-	CCheckerPiece()
-	{
-		m_nTeam = 0;
-		m_stPos.m_nRow = 0;
-		m_stPos.m_nCol = 0;
-		m_bPromoted = FALSE;
-	};
-	virtual ~CCheckerPiece() { }
-
-private:
-	INT		m_nTeam;
-	BOOL	m_bPromoted;
-	ST_PIECE_POS	m_stPos;
-};
-
-class CCheckerGame
-{
-public:
-	VOID InitalizeGame(BOOL m_bRedAI, BOOL m_bWhiteAI);
-	BOOL MovePiece(CCheckerPiece* a_pCheckerPiece, INT a_nRow, INT a_nCol);
-	BOOL CheckValidMovement(ST_PIECE_POS a_stCurPos, ST_PIECE_POS a_stNextPos);
+	BOOL IsPieceExist(INT a_nRow, INT a_nCol);
+	BOOL IsPiecePromoted(INT a_nRow, INT a_nCol);
+	INT GetPieceTeam(INT a_nRow, INT a_nCol);
 
 	// AI 전용
 public:
@@ -89,13 +64,22 @@ public:
 	BOOL PlayAITurn();
 
 public:
+	BOOL BitSideMovePiece(const ST_MOVE_POS& move);
+	BOOL BitSideCheckValidMovement(const ST_MOVE_POS& move);
+
+public:
+	GameState GetState();
+	VOID UpdateState();
+	VOID RollbackState(const GameState& record);
+
+public:
 	/* 헤더에서 구현 */
 	VOID SetEventHandler(CCheckerEventHandler* a_pEventHandler) { m_pEventHandler = a_pEventHandler; }
-	CCheckerPiece* GetPieceByPos(INT a_nRow, INT a_nCol) { return m_pCheckerBoard[a_nRow][a_nCol]; }
-	INT	GetPlayerTurn() { return m_nCurrentTurn; }
+	INT	GetPlayerTurn() { return m_bCurrentTurnRed? CHECKER_TEAM_RED : CHECKER_TEAM_WHITE; }
 	BOOL IsCurrentPlayerAI()
 	{
-		if(!m_pPlayerAI[m_nCurrentTurn - 1])
+		INT CurTurnAI = m_bCurrentTurnRed ? CHECKER_AI_RED : CHECKER_AI_WHITE;
+		if(!m_pPlayerAI[CurTurnAI])
 			return FALSE;
 		return TRUE;
 	}
@@ -107,16 +91,148 @@ public:
 private:
 	VOID CheckGameResult();
 	VOID ChangeTurn();
-	BOOL CheckPieceTakenAvailable(ST_PIECE_POS a_stCurPos);
-	BOOL IsMoveable(CCheckerPiece* a_pCheckerPiece);
-	BOOL CheckMustJump(INT a_nTeam);
+	INT ChangeRowColToIndex(INT a_nRow, INT a_nCol);
+	ST_PIECE_POS ChangeIndexToRowCol(INT a_nIndex);
 
 private:
-	CCheckerPiece* m_pCheckerBoard[8][8];
-	INT		m_nCurrentTurn;
-	BOOL	m_bPieceTakenOccured;
-	BOOL	m_bBonusTurn;
+	BOOL PieceMove(const ST_MOVE_POS& move);
+	BOOL PieceJump(const ST_MOVE_POS& move);
+
+private:
 	ST_PIECE_POS	m_stLastMovedPos;
 	CCheckerPlayerAI* m_pPlayerAI[2];
 	CCheckerEventHandler* m_pEventHandler;
+private:
+	BitBoard m_WhitePiece;
+	BitBoard m_RedPiece;
+	BitBoard m_KingPiece;
+
+	/* Tracks if it's P1's turn or not */
+	BOOL m_bCurrentTurnRed;
+	GameState m_State;
+	BitBoard m_MustJumpPiece;
+
+
+public:
+	BOOL isLive() const
+	{
+		return (getMovers() || getJumpers());
+	}
+
+	VOID SetTurn(INT a_nTeam);
+
+private:
+	inline BitBoard getEmpty() const
+	{
+		return ~(m_WhitePiece | m_RedPiece);
+	}
+
+	inline BitBoard getJumpers() const
+	{
+		BitBoard empty = getEmpty();
+		BitBoard Temp;
+		BitBoard jumpers = 0;
+		if(m_bCurrentTurnRed)
+		{
+			BitBoard RedKing = m_RedPiece & m_KingPiece;
+			Temp = RotateRight(empty, 7) & m_WhitePiece & CAN_UPLEFT;
+			jumpers |= RotateRight(Temp, 7) & m_RedPiece & CAN_UPLEFT;
+			Temp = RotateRight(empty, 1) & m_WhitePiece & CAN_UPRIGHT;
+			jumpers |= RotateRight(Temp, 1) & m_RedPiece & CAN_UPRIGHT;
+
+			Temp = RotateLeft(empty, 7) & m_WhitePiece & CAN_DOWNRIGHT;
+			jumpers |= RotateLeft(Temp, 7) & RedKing & CAN_DOWNRIGHT;
+			Temp = RotateLeft(empty, 1) & m_WhitePiece & CAN_DOWNLEFT;
+			jumpers |= RotateLeft(Temp, 1) & RedKing & CAN_DOWNLEFT;
+		}
+		else
+		{
+			BitBoard WhiteKing = m_WhitePiece & m_KingPiece;
+			Temp = RotateLeft(empty, 7) & m_RedPiece & CAN_DOWNRIGHT;
+			jumpers |= RotateLeft(Temp, 7) & m_WhitePiece & CAN_DOWNRIGHT;
+			Temp = RotateLeft(empty, 1) & m_RedPiece & CAN_DOWNLEFT;
+			jumpers |= RotateLeft(Temp, 1) & m_WhitePiece & CAN_DOWNLEFT;
+
+			Temp = RotateRight(empty, 7) & m_RedPiece & CAN_UPLEFT;
+			jumpers |= RotateRight(Temp, 7) & WhiteKing & CAN_UPLEFT;
+			Temp = RotateRight(empty, 1) & m_RedPiece & CAN_UPRIGHT;
+			jumpers |= RotateRight(Temp, 1) & WhiteKing & CAN_UPRIGHT;
+		}
+
+		return jumpers;
+	}
+
+	inline BitBoard getMovers() const
+	{
+		const BitBoard empty = getEmpty();
+		BitBoard Movers;
+
+		if(m_bCurrentTurnRed)
+		{
+			const BitBoard RedKing = m_RedPiece & m_KingPiece;
+			Movers = RotateRight(empty, 7) & m_RedPiece & CAN_UPLEFT;
+			Movers |= RotateRight(empty, 1) & m_RedPiece & CAN_UPRIGHT;
+			Movers |= RotateLeft(empty, 7) & RedKing & CAN_DOWNRIGHT;
+			Movers |= RotateLeft(empty, 1) & RedKing & CAN_DOWNLEFT;
+		}
+		else
+		{
+			const BitBoard WhiteKing = m_WhitePiece & m_KingPiece; // Kings
+			Movers = RotateLeft(empty, 7) & m_WhitePiece & CAN_DOWNRIGHT;
+			Movers |= RotateLeft(empty, 1) & m_WhitePiece & CAN_DOWNLEFT;
+			Movers |= RotateRight(empty, 7) & WhiteKing & CAN_UPLEFT;
+			Movers |= RotateRight(empty, 1) & WhiteKing & CAN_UPRIGHT;
+		}
+
+		return Movers;
+	}
+
+	inline BitBoard canJump(const BitBoard src, const BitBoard vict)
+	{
+		if(m_MustJumpPiece)
+			if(!(src & m_MustJumpPiece))
+				return 0u;
+		BitBoard Temp;
+		BitBoard SourceKing;
+		BitBoard empty = getEmpty();
+
+		if(m_bCurrentTurnRed)
+		{
+			SourceKing = src & m_KingPiece;
+
+			Temp = RotateLeft(src & CAN_UPLEFT, 7) & vict;
+			if(Temp)
+				return RotateLeft(Temp & CAN_UPLEFT, 7) & empty;
+			Temp = RotateLeft(src & CAN_UPRIGHT, 1) & vict;
+			if(Temp)
+				return RotateLeft(Temp & CAN_UPRIGHT, 1) & empty;
+
+			Temp = RotateRight(SourceKing & CAN_DOWNRIGHT, 7) & vict;
+			if(Temp)
+				return RotateRight(Temp & CAN_DOWNRIGHT, 7) & empty;
+			Temp = RotateRight(SourceKing & CAN_DOWNLEFT, 1) & vict;
+			if(Temp)
+				return RotateRight(Temp & CAN_DOWNLEFT, 1) & empty;
+		}
+		else
+		{
+			SourceKing = src & m_KingPiece;
+
+			Temp = RotateRight(src & CAN_DOWNRIGHT, 7) & vict;
+			if(Temp)
+				return RotateRight(Temp & CAN_DOWNRIGHT, 7) & empty;
+			Temp = RotateRight(src & CAN_DOWNLEFT, 1) & vict;
+			if(Temp)
+				return RotateRight(Temp & CAN_DOWNLEFT, 1) & empty;
+
+			Temp = RotateLeft(SourceKing & CAN_UPLEFT, 7) & vict;
+			if(Temp)
+				return RotateLeft(Temp & CAN_UPLEFT, 7) & empty;
+			Temp = RotateLeft(SourceKing & CAN_UPRIGHT, 1) & vict;
+			if(Temp)
+				return RotateLeft(Temp & CAN_UPRIGHT, 1) & empty;
+		}
+
+		return 0u;
+	}
 };
