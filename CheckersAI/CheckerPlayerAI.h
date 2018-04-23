@@ -26,7 +26,8 @@ class CCheckerGame;
 typedef struct _ST_THREAD_PARAM
 {
 	BOOL* m_bThreadRunning;
-	UINT m_nDifficluty;
+	UINT m_nRedDifficluty;
+	UINT m_nWhiteDifficluty;
 	CCheckerGame* m_pCheckerGame;
 	CCheckerPlayerAI* m_pCheckerAI;
 } ST_THREAD_PARAM, *PST_THREAD_PARAM;
@@ -35,8 +36,9 @@ class CCheckerPlayerAI
 {
 public:
 	friend struct Node;
-	ST_MOVE_POS EvaluateGame(CCheckerGame&);
+	VOID InitializeAI(INT a_nRedDifficulty = 10, INT a_nWhiteDifficulty = 10);
 	BOOL MakeMove();
+	ST_MOVE_POS EvaluateGame(CCheckerGame&);
 
 public:
 	VOID SetCheckerGame(CCheckerGame* a_pCheckerGame)
@@ -56,7 +58,7 @@ public:
 	}
 
 public:
-	CCheckerPlayerAI(INT a_nTeam, INT a_nDifficulty = 10);
+	CCheckerPlayerAI(INT a_nRedDifficulty = 10, INT a_nWhiteDifficulty = 10);
 	virtual ~CCheckerPlayerAI();
 
 private:

@@ -6,34 +6,31 @@
 #include <iostream>
 #include <limits>
 
-static BOOL s_nMoveCount = 0;
+static INT s_nMoveCount = 0;
+static BOOL s_bStopFunction = 0; // 재시작시 이미 돌아가고 있는 함수 모두 중단
 static CMutex s_mtx;
 CCheckerGame CCheckerPlayerAI::s_Game(false, false);
 
-CCheckerPlayerAI::CCheckerPlayerAI(INT a_nTeam, INT a_nDifficulty /*= 15*/)
+CCheckerPlayerAI::CCheckerPlayerAI(INT a_nRedDifficulty/* = 10*/, INT a_nWhiteDifficulty/* = 10*/)
 {
 	m_pCheckerGame = NULL;
-	m_nTeam = a_nTeam;
 	m_bThreadRunning = TRUE;
 	m_stThreadParam.m_bThreadRunning = &m_bThreadRunning;
 	m_stThreadParam.m_pCheckerGame = NULL;
 	m_stThreadParam.m_pCheckerAI = this;
-	m_stThreadParam.m_nDifficluty = a_nDifficulty;
+	m_stThreadParam.m_nRedDifficluty = a_nRedDifficulty;
+	m_stThreadParam.m_nWhiteDifficluty = a_nWhiteDifficulty;
 	m_pThread = NULL;
 	m_stRootNode.m_unDepth = 0;
+	s_nMoveCount = 0;
+	s_bStopFunction = FALSE;
 }
 
 CCheckerPlayerAI::~CCheckerPlayerAI()
 {
-	s_AppMutex.Lock();
-	m_unDifficulty = 0;
-
-	//s_mtx.Lock();
 	m_bThreadRunning = FALSE;
-	//s_mtx.Unlock();
-	
+	m_pCheckerGame = NULL;
 	m_stRootNode.m_vBranches.clear();
-	s_AppMutex.Unlock();
 }
 
 UINT WorkerThread(LPVOID a_pParam)
@@ -43,18 +40,20 @@ UINT WorkerThread(LPVOID a_pParam)
 	CCheckerGame* pCheckerGame = pstParam->m_pCheckerGame;
 	CCheckerPlayerAI* pCheckerAI = pstParam->m_pCheckerAI;
 	ST_MOVE_POS stMovePos;
-	INT  nSrcIndex = 0;
-	INT	 nSrcRow = 0;
-	INT	 nSrcCol = 0;
-	INT	 nDstIndex = 0;
-	INT	 nDstRow = 0;
-	INT	 nDstCol = 0;
-	INT	 nMoveRow = 0;
-	INT	 nMoveCol = 0;
 	BOOL bResult = FALSE;
+	BOOL bForceRestarted = FALSE;
 
 	while(1)
 	{
+		// 강제 재시작시 예외처리
+		if(bForceRestarted)
+		{
+			// 재시작 되었는데 MoveCount가 0이라면 1 증가
+			if(pCheckerGame->IsCurrentPlayerAI() && s_nMoveCount == 0)
+				s_nMoveCount++;
+		}
+		bForceRestarted = FALSE;
+
 		if(!pCheckerGame || !(s_nMoveCount > 0))
 		{
 			if(!*pThreadRunning)
@@ -64,31 +63,57 @@ UINT WorkerThread(LPVOID a_pParam)
 			continue;
 		}
 
+		s_AppMutex.Lock();
+		if(s_nMoveCount > 0)
+			s_nMoveCount--;
+		s_AppMutex.Unlock();
 		
-		pCheckerAI->SetDifficulty(pstParam->m_nDifficluty);
+		if(pCheckerGame->GetPlayerTurn() == CHECKER_TEAM_RED)
+			pCheckerAI->SetDifficulty(pstParam->m_nRedDifficluty);
+		else
+			pCheckerAI->SetDifficulty(pstParam->m_nWhiteDifficluty);
+
+		s_AppMutex.Lock();
+		s_bStopFunction = FALSE;
+		s_AppMutex.Unlock();
 
 		// Step 2. AI가 어디로 이동할지 알려준다.
-		s_mtx.Lock();
 		stMovePos = pCheckerAI->EvaluateGame(*pCheckerGame);
-		s_mtx.Unlock();
+
+		// 강제 재시작 처리
+		s_AppMutex.Lock();
+		if(s_bStopFunction)
+		{
+			bForceRestarted = TRUE;
+			s_bStopFunction = FALSE;
+			s_nMoveCount = 0;
+			s_AppMutex.Unlock();
+			continue;
+		}
+		s_AppMutex.Unlock();
 
 		// 이동할 경로가 없다면 게임 끝
 		if(stMovePos.m_sSrc == 0 && stMovePos.m_sDst == 0)
 			return 0;
 
 		// Step 3. 그리로 이동하면 된다.
-		s_AppMutex.Lock();
-		bResult = pCheckerGame->BitSideMovePiece(stMovePos);
-		s_AppMutex.Unlock();
-		
-
-		if(!bResult)
-			continue;
-
-		s_nMoveCount--;
+		pCheckerGame->BitSideMovePiece(stMovePos);
 	}
 
 	return 0;
+}
+
+VOID CCheckerPlayerAI::InitializeAI(INT a_nRedDifficulty/* = 10*/, INT a_nWhiteDifficulty/* = 10*/)
+{
+	//m_bThreadRunning = FALSE;
+	//s_Game.InitalizeGame(FALSE, FALSE);
+	m_stThreadParam.m_nRedDifficluty = a_nRedDifficulty;
+	m_stThreadParam.m_nWhiteDifficluty = a_nWhiteDifficulty;
+	s_AppMutex.Lock();
+//	s_nMoveCount = 0;
+	s_bStopFunction = TRUE;
+	s_AppMutex.Unlock();
+	//m_stRootNode.m_vBranches.clear();
 }
 
 BOOL CCheckerPlayerAI::MakeMove()
@@ -96,12 +121,15 @@ BOOL CCheckerPlayerAI::MakeMove()
 	if(!m_pThread)
 		m_pThread = ::AfxBeginThread(WorkerThread, &m_stThreadParam);
 
-	s_nMoveCount++;
+	s_AppMutex.Lock();
+	if(m_pCheckerGame->IsCurrentPlayerAI())
+		s_nMoveCount++;
+	s_AppMutex.Unlock();
 	
 	return TRUE;
 }
 
-void CCheckerPlayerAI::Initialize(const GameState& a_State)
+VOID CCheckerPlayerAI::Initialize(const GameState& a_State)
 {
 	s_Game.RollbackState(a_State);
 	if(!m_stRootNode.m_vBranches.empty())
@@ -178,6 +206,9 @@ ST_MOVE_POS CCheckerPlayerAI::EvaluateGame(CCheckerGame& a_Game)
 			return MustJumpThenJump(a_Game);
 	}
 
+	if(s_bStopFunction)
+		return {0, 0, false};
+
 	const GameState CurrentState = a_Game.GetState();
 	Initialize(CurrentState);
 
@@ -221,6 +252,9 @@ ST_MOVE_POS CCheckerPlayerAI::EvaluateGame(CCheckerGame& a_Game)
 
 INT CCheckerPlayerAI::AlphaBeta(Node& node, INT alpha, INT beta, BOOL player)
 {
+	if(s_bStopFunction)
+		return 0;
+
 	if(node.m_unDepth >= m_unDifficulty)
 	{ 
 		if(IsNoisy(!player))
@@ -265,8 +299,8 @@ INT CCheckerPlayerAI::AlphaBeta(Node& node, INT alpha, INT beta, BOOL player)
 
 INT CCheckerPlayerAI::Quiescence(Node& node, INT alpha, INT beta, BOOL player)
 {
-	using std::max;
-	using std::min;
+	if(s_bStopFunction)
+		return 0;
 
 	if(!s_Game.getJumpers() && !s_Game.getMovers())
 		return node.m_CurState.GetPoint();
@@ -308,6 +342,9 @@ INT CCheckerPlayerAI::Quiescence(Node& node, INT alpha, INT beta, BOOL player)
 
 BOOL CCheckerPlayerAI::IsNoisy(BOOL a_bCurrentTurnRed)
 {
+	if(s_bStopFunction)
+		return 0;
+
 	BitBoard jumpers = s_Game.getJumpers();
 	BitBoard j = BitCalculator::PickHighestBit(jumpers);
 

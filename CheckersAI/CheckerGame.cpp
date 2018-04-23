@@ -5,65 +5,41 @@
 #include <vector>
 #include <sstream>
 
-CCheckerGame::CCheckerGame(BOOL m_bRedAI, BOOL m_bWhiteAI)
+CCheckerGame::CCheckerGame(BOOL a_bRedAI, BOOL a_bWhiteAI)
 {
-	m_pPlayerAI[CHECKER_AI_RED] = NULL;
-	m_pPlayerAI[CHECKER_AI_WHITE] = NULL;
+	m_pPlayerAI = new CCheckerPlayerAI();
+	m_pPlayerAI->SetCheckerGame(this);
+	
 	m_RedPiece = RED_PIECE_INIT;
 	m_WhitePiece = WHITE_PIECE_INIT;
 	m_KingPiece = 0;
 	m_MustJumpPiece = 0;
 	m_State = {0, };
 
-	InitalizeGame(m_bRedAI, m_bWhiteAI);
+	InitalizeGame(a_bRedAI, a_bRedAI);
 }
 
 CCheckerGame::~CCheckerGame()
 {
-	if(m_pPlayerAI[CHECKER_AI_RED])
-		delete m_pPlayerAI[CHECKER_AI_RED];
-	if(m_pPlayerAI[CHECKER_AI_WHITE])
-		delete m_pPlayerAI[CHECKER_AI_WHITE];
-	m_pPlayerAI[CHECKER_AI_RED] = NULL;
-	m_pPlayerAI[CHECKER_AI_WHITE] = NULL;
+	if(m_pPlayerAI)
+		delete m_pPlayerAI;
+
 	m_pEventHandler = NULL;	
 }
 
-VOID CCheckerGame::InitalizeGame(BOOL m_bRedAI, BOOL m_bWhiteAI)
+VOID CCheckerGame::InitalizeGame(BOOL a_bRedAI, BOOL a_bWhiteAI)
 {
-	s_AppMutex.Lock();
-	if(m_pPlayerAI[CHECKER_AI_RED])
-		delete m_pPlayerAI[CHECKER_AI_RED];
-	if(m_pPlayerAI[CHECKER_AI_WHITE])
-		delete m_pPlayerAI[CHECKER_AI_WHITE];
-	m_pPlayerAI[CHECKER_AI_RED] = NULL;
-	m_pPlayerAI[CHECKER_AI_WHITE] = NULL;
-	s_AppMutex.Unlock();
-
 	m_RedPiece = RED_PIECE_INIT;
 	m_WhitePiece = WHITE_PIECE_INIT;
 	m_MustJumpPiece = 0;
 	m_KingPiece = 0;
+	m_bRedPlayerAI = a_bRedAI;
+	m_bWhitePlayerAI = a_bWhiteAI;
 
-	// Step 3. AI 플레이어 초기화
-	if(m_bRedAI)
-	{ 
-		m_pPlayerAI[CHECKER_AI_RED] = new CCheckerPlayerAI(CHECKER_TEAM_RED);
-		m_pPlayerAI[CHECKER_AI_RED]->SetCheckerGame(this);
-	}
-
-	if(m_bWhiteAI)
-	{ 
-		m_pPlayerAI[CHECKER_AI_WHITE] = new CCheckerPlayerAI(CHECKER_TEAM_WHITE);
-		m_pPlayerAI[CHECKER_AI_WHITE]->SetCheckerGame(this);
-	}
-
-	// Step 4. 빨간색이 선으로 시작한다.
+	// 빨간색이 선으로 시작한다.
 	m_bCurrentTurnRed = TRUE;
-
-	// AI가 레드일 경우 AI턴 시작
-	if(m_bRedAI)
-		m_pPlayerAI[CHECKER_AI_RED]->MakeMove(); 
+	if(a_bRedAI || a_bWhiteAI)
+		m_pPlayerAI->InitializeAI();
 }
 
 BOOL CCheckerGame::MovePiece(ST_PIECE_POS a_stCurPos, ST_PIECE_POS a_stNextPos)
@@ -266,22 +242,21 @@ VOID CCheckerGame::CheckGameResult()
 		m_pEventHandler->OnGameOver(nGameResult);
 }
 
-VOID CCheckerGame::SetAIDifficulty(INT a_nTeam, INT a_nDifficulty)
+VOID CCheckerGame::SetAIDifficulty(INT a_nRedDifficulty, INT a_nWhiteDifficulty)
 {
-	if(!m_pPlayerAI[a_nTeam - 1])
-		return;
-
-	m_pPlayerAI[a_nTeam - 1]->SetDifficulty((UINT)a_nDifficulty);
+	if(m_pPlayerAI)
+		m_pPlayerAI->InitializeAI(a_nRedDifficulty, a_nWhiteDifficulty);
 }
 
 BOOL CCheckerGame::PlayAITurn()
 {
-	INT CurTurnAI = m_bCurrentTurnRed ? CHECKER_AI_RED : CHECKER_AI_WHITE;
-
-	if(!m_pPlayerAI[CurTurnAI])
+	if(m_bCurrentTurnRed && !m_bRedPlayerAI)
 		return FALSE;
 
-	if(!(m_pPlayerAI[CurTurnAI]->MakeMove()))
+	if(!m_bCurrentTurnRed && !m_bWhitePlayerAI)
+		return FALSE;
+
+	if(!(m_pPlayerAI->MakeMove()))
 		return FALSE;
 
 	return TRUE;
@@ -533,7 +508,6 @@ BOOL CCheckerGame::PieceMove(const ST_MOVE_POS& move)
 	if((dst & ROW_1) || (dst & ROW_8))
 		m_KingPiece |= dst;
 
-	//m_MustJumpPiece = 0;
 	m_bCurrentTurnRed = !m_bCurrentTurnRed;
 	// 턴 변경 후 MustJump가 발생하는지 확인
 	BitBoard NextTurn = m_bCurrentTurnRed? m_RedPiece : m_WhitePiece;

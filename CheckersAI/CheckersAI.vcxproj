@@ -98,7 +98,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>$(ProjectDir)GridCtrl</AdditionalLibraryDirectories>
-      <AdditionalDependencies>GridCtrlLib.lib</AdditionalDependencies>
+      <AdditionalDependencies>GridCtrlLib_d.lib</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>

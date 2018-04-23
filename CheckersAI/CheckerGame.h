@@ -60,7 +60,7 @@ public:
 
 	// AI Àü¿ë
 public:
-	VOID SetAIDifficulty(INT a_nTeam, INT a_nDifficulty);
+	VOID SetAIDifficulty(INT a_nRedDifficulty, INT a_nWhiteDifficulty);
 	BOOL PlayAITurn();
 
 public:
@@ -78,10 +78,11 @@ public:
 	INT	GetPlayerTurn() { return m_bCurrentTurnRed? CHECKER_TEAM_RED : CHECKER_TEAM_WHITE; }
 	BOOL IsCurrentPlayerAI()
 	{
-		INT CurTurnAI = m_bCurrentTurnRed ? CHECKER_AI_RED : CHECKER_AI_WHITE;
-		if(!m_pPlayerAI[CurTurnAI])
-			return FALSE;
-		return TRUE;
+		if(m_bCurrentTurnRed)
+			return m_bRedPlayerAI;
+		else
+			return m_bWhitePlayerAI;
+		return FALSE;
 	}
 
 public:
@@ -100,8 +101,12 @@ private:
 
 private:
 	ST_PIECE_POS	m_stLastMovedPos;
-	CCheckerPlayerAI* m_pPlayerAI[2];
+	//CCheckerPlayerAI* m_pPlayerAI[2];
+	CCheckerPlayerAI* m_pPlayerAI;
 	CCheckerEventHandler* m_pEventHandler;
+	BOOL	m_bRedPlayerAI;
+	BOOL	m_bWhitePlayerAI;
+
 private:
 	BitBoard m_WhitePiece;
 	BitBoard m_RedPiece;
