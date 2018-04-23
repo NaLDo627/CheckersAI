@@ -97,6 +97,8 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
+      <AdditionalLibraryDirectories>$(ProjectDir)GridCtrl</AdditionalLibraryDirectories>
+      <AdditionalDependencies>GridCtrlLib.lib</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -147,6 +149,8 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(ProjectDir)GridCtrl;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>GridCtrlLib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -191,14 +195,6 @@
     <ClInclude Include="CheckerPlayerAI.h" />
     <ClInclude Include="CheckersAI.h" />
     <ClInclude Include="CheckersAIDlg.h" />
-    <ClInclude Include="GridCtrl\CellRange.h" />
-    <ClInclude Include="GridCtrl\GridCell.h" />
-    <ClInclude Include="GridCtrl\GridCellBase.h" />
-    <ClInclude Include="GridCtrl\GridCtrl.h" />
-    <ClInclude Include="GridCtrl\GridDropTarget.h" />
-    <ClInclude Include="GridCtrl\InPlaceEdit.h" />
-    <ClInclude Include="GridCtrl\MemDC.h" />
-    <ClInclude Include="GridCtrl\TitleTip.h" />
     <ClInclude Include="CheckerGame.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -210,12 +206,6 @@
     <ClCompile Include="CheckerPlayerAI.cpp" />
     <ClCompile Include="CheckersAI.cpp" />
     <ClCompile Include="CheckersAIDlg.cpp" />
-    <ClCompile Include="GridCtrl\GridCell.cpp" />
-    <ClCompile Include="GridCtrl\GridCellBase.cpp" />
-    <ClCompile Include="GridCtrl\GridCtrl.cpp" />
-    <ClCompile Include="GridCtrl\GridDropTarget.cpp" />
-    <ClCompile Include="GridCtrl\InPlaceEdit.cpp" />
-    <ClCompile Include="GridCtrl\TitleTip.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

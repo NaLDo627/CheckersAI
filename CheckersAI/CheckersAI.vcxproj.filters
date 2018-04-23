@@ -13,14 +13,8 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\Grid_Ctrl">
-      <UniqueIdentifier>{2eaa9372-e66e-4283-8fb9-3022a606b9be}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resource Files\Grid_Ctrl">
       <UniqueIdentifier>{8e6b094e-a813-4f91-a210-593baf59822f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Grid_Ctrl">
-      <UniqueIdentifier>{a298859a-af14-4560-b8b1-eb24bb54731c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -38,30 +32,6 @@
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GridCtrl\CellRange.h">
-      <Filter>Header Files\Grid_Ctrl</Filter>
-    </ClInclude>
-    <ClInclude Include="GridCtrl\GridCell.h">
-      <Filter>Header Files\Grid_Ctrl</Filter>
-    </ClInclude>
-    <ClInclude Include="GridCtrl\GridCellBase.h">
-      <Filter>Header Files\Grid_Ctrl</Filter>
-    </ClInclude>
-    <ClInclude Include="GridCtrl\GridCtrl.h">
-      <Filter>Header Files\Grid_Ctrl</Filter>
-    </ClInclude>
-    <ClInclude Include="GridCtrl\GridDropTarget.h">
-      <Filter>Header Files\Grid_Ctrl</Filter>
-    </ClInclude>
-    <ClInclude Include="GridCtrl\InPlaceEdit.h">
-      <Filter>Header Files\Grid_Ctrl</Filter>
-    </ClInclude>
-    <ClInclude Include="GridCtrl\MemDC.h">
-      <Filter>Header Files\Grid_Ctrl</Filter>
-    </ClInclude>
-    <ClInclude Include="GridCtrl\TitleTip.h">
-      <Filter>Header Files\Grid_Ctrl</Filter>
     </ClInclude>
     <ClInclude Include="CheckerGame.h">
       <Filter>Header Files</Filter>
@@ -82,24 +52,6 @@
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GridCtrl\GridCell.cpp">
-      <Filter>Source Files\Grid_Ctrl</Filter>
-    </ClCompile>
-    <ClCompile Include="GridCtrl\GridCellBase.cpp">
-      <Filter>Source Files\Grid_Ctrl</Filter>
-    </ClCompile>
-    <ClCompile Include="GridCtrl\GridCtrl.cpp">
-      <Filter>Source Files\Grid_Ctrl</Filter>
-    </ClCompile>
-    <ClCompile Include="GridCtrl\GridDropTarget.cpp">
-      <Filter>Source Files\Grid_Ctrl</Filter>
-    </ClCompile>
-    <ClCompile Include="GridCtrl\InPlaceEdit.cpp">
-      <Filter>Source Files\Grid_Ctrl</Filter>
-    </ClCompile>
-    <ClCompile Include="GridCtrl\TitleTip.cpp">
-      <Filter>Source Files\Grid_Ctrl</Filter>
     </ClCompile>
     <ClCompile Include="CheckerGame.cpp">
       <Filter>Source Files</Filter>
