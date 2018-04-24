@@ -94,7 +94,18 @@ UINT WorkerThread(LPVOID a_pParam)
 
 		// 이동할 경로가 없다면 게임 끝
 		if(stMovePos.m_sSrc == 0 && stMovePos.m_sDst == 0)
-			return 0;
+		{
+			s_AppMutex.Lock();
+			if(s_bStopFunction)
+			{
+				bForceRestarted = TRUE;
+				s_bStopFunction = FALSE;
+				s_nMoveCount = 0;
+				s_AppMutex.Unlock();
+				continue;
+			}
+			s_AppMutex.Unlock();
+		}
 
 		// Step 3. 그리로 이동하면 된다.
 		pCheckerGame->BitSideMovePiece(stMovePos);
